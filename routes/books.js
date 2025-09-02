@@ -1,24 +1,22 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../db/connection");
+const Book = require("../models/Book");
 
 // Get all books
-router.get("/", (req, res) => {
-    db.query("SELECT * FROM books", (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
+router.get("/", async (req, res) => {
+  const books = await Book.findAll();
+  res.json(books);
 });
 
-// Get single book by ID
-router.get("/:id", (req, res) => {
-    const { id } = req.params;
-    db.query("SELECT * FROM books WHERE id = ?", [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (results.length === 0) return res.status(404).json({ message: "Book not found" });
-        res.json(results[0]);
-    });
+// Add a book (admin only later)
+router.post("/add", async (req, res) => {
+  const { title, author, price, image } = req.body;
+  try {
+    const book = await Book.create({ title, author, price, image });
+    res.json({ message: "Book added successfully", book });
+  } catch (err) {
+    res.status(400).json({ error: "Error adding book" });
+  }
 });
 
 module.exports = router;
-

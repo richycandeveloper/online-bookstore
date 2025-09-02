@@ -1,49 +1,28 @@
-import express from "express";
-import mysql from "mysql2";
-import bodyParser from "body-parser";
-import path from "path";
-import { fileURLToPath } from "url";
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+require("dotenv").config();
 
-// Fix for __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const sequelize = require("./db");
+const User = require("./models/account");
+const Book = require("./models/practice");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
+app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public"))); // serve frontend
+app.use(express.static("public"));
 
-// Database connection
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",       // your MySQL username
-  password: "",       // your MySQL password
-  database: "online_bookstore"
+// Routes
+const authRoutes = require("./routes/auth");
+const bookRoutes = require("./routes/books");
+
+app.use("/api/auth", authRoutes);
+app.use("/api/books", bookRoutes);
+
+// Sync DB
+sequelize.sync().then(() => {
+  console.log("✅ Database synced");
 });
 
-// Connect DB
-db.connect((err) => {
-  if (err) {
-    console.error("Database connection failed:", err);
-    return;
-  }
-  console.log("✅ Connected to MySQL database");
-});
-
-// Test route
-app.get("/api/books", (req, res) => {
-  db.query("SELECT * FROM books", (err, results) => {
-    if (err) {
-      res.status(500).send("Error fetching books");
-      return;
-    }
-    res.json(results);
-  });
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
+const PORT = 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
